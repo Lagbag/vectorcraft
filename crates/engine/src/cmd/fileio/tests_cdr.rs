@@ -5,6 +5,15 @@ use vectorcraft_doc::NodeKind;
 
 use super::*;
 
+/// Basic SVG shapes and paths both retain vector geometry; none may become an image.
+fn assert_vector_svg(svg: &str) {
+    let parsed = roxmltree::Document::parse(svg).unwrap();
+    assert!(parsed.descendants().any(|node| {
+        node.is_element() && matches!(node.tag_name().name(), "path" | "rect" | "circle" | "ellipse" | "line" | "polygon" | "polyline")
+    }));
+    assert!(!parsed.descendants().any(|node| node.is_element() && node.tag_name().name() == "image"));
+}
+
 #[test]
 /// Expose CDR in shared open/place filters while keeping the source format read-only.
 fn cdr_is_registered_for_open_and_place_but_never_for_saving() {
@@ -57,8 +66,7 @@ fn cdr_open_keeps_editable_vectors_and_requires_a_new_save_path() {
     assert!(st.doc.images.is_empty(), "native geometry, no preview raster");
     assert!(st.doc.node_count() >= 2);
     let svg = vectorcraft_svg::export(&st.doc, &vectorcraft_svg::ExportOptions::default());
-    assert!(svg.contains("<path"), "the rectangle is editable path geometry");
-    assert!(!svg.contains("<image"));
+    assert_vector_svg(&svg);
     let native = s.execute("document.serialize", &json!({"format": "vectorcraft"})).unwrap();
     let data = vectorcraft_format::base64_decode(native["dataBase64"].as_str().unwrap()).unwrap();
     open_bytes(&mut s, "copy.vectorcraft", &data, None).unwrap();
@@ -135,7 +143,8 @@ fn cdr_powerclip_remains_editable_and_exports_vector_clipping() {
     assert_eq!(before.pixels[(75 * 160 + 100) * 4 + 3], 0, "same-winding clip hole stays empty");
     assert_eq!(before.pixels[(65 * 160 + 130) * 4 + 3], 0, "oversized vector content is clipped");
     let svg = vectorcraft_svg::export(doc, &vectorcraft_svg::ExportOptions::default());
-    assert!(svg.contains("<clipPath") && svg.contains("<path") && !svg.contains("<image"));
+    assert_vector_svg(&svg);
+    assert!(svg.contains("<clipPath"));
     session.execute("select.set", &json!({"ids": [content.0]})).unwrap();
     session.execute("object.move", &json!({"dx": 4, "dy": 3})).unwrap();
     session.execute("edit.undo", &json!({})).unwrap();
@@ -168,7 +177,7 @@ fn cdr_zero_sized_page_opens_and_round_trips_as_vectors() {
     let before = vectorcraft_render::Renderer::new().render_region(&state.doc, board, 2.0, false);
     assert!(before.pixels.as_chunks::<4>().0.iter().any(|pixel| pixel[3] != 0));
     let svg = vectorcraft_svg::export(&state.doc, &vectorcraft_svg::ExportOptions::default());
-    assert!(svg.contains("<path") && !svg.contains("<image"));
+    assert_vector_svg(&svg);
     let serialized = session.execute("document.serialize", &json!({"format": "vectorcraft"})).unwrap();
     let bytes = vectorcraft_format::base64_decode(serialized["dataBase64"].as_str().unwrap()).unwrap();
     open_bytes(&mut session, "unsized-copy.vectorcraft", &bytes, None).unwrap();

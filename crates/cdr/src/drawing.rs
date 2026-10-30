@@ -103,8 +103,12 @@ pub(crate) fn import(chunks: &[Chunk], version: u32) -> Result<Imported, String>
             id: index as u32 + 1,
             name: format!("Page {}", index + 1),
             rect: frame,
+            locked: false,
             show_center_mark: false,
             show_cross_hairs: false,
+            show_video_safe_areas: false,
+            video_ruler_pixel_aspect_ratio: 1.0,
+            color: None,
         });
         let mut layer = Node::layer(d.id(), &format!("Page {}", index + 1), LayerColor::Preset(index as u8 % 27));
         if let Some(children) = layer.children_mut() {
@@ -506,7 +510,7 @@ impl Fill {
                 if ![geom.start.x, geom.start.y, geom.end.x, geom.end.y, geom.aspect].iter().all(|v| v.is_finite() && v.abs() <= MAX_COORD) {
                     return Err("CDR gradient placement exceeds document limits".into());
                 }
-                let mut gradient = GradientPaint::new(Gradient { kind: f.kind, stops: f.stops.clone() });
+                let mut gradient = GradientPaint::new(Gradient::new(f.kind, f.stops.clone()));
                 gradient.geom = Some(geom);
                 Ok(Paint::Gradient(Box::new(gradient)))
             }
@@ -1143,7 +1147,7 @@ impl<'a> Drawing<'a> {
         }
         let image = Node::new(
             self.id(),
-            NodeKind::Image(Box::new(ImageObject { key, width, height, xf: image_xf, link: None, placement: Default::default() })),
+            NodeKind::Image(Box::new(ImageObject { key, width, height, xf: image_xf, link: None, placement: Default::default(), pixels: None })),
         );
         let mut node = if crop_count == 0 {
             image

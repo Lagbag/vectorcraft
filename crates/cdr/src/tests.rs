@@ -173,6 +173,51 @@ fn older_bitmap_objects_keep_their_native_crop_tail() {
     }
 }
 
+/// Check the known bounds, stroke and numeric paint of each optional original scene.
+fn assert_corel_geometry_and_paint(file: &str, objects: &[&Node]) {
+    let mm = 72.0 / 25.4;
+    if file.starts_with("rectangle") || file.starts_with("geometry") {
+        let red = objects.iter().find(|n| n.name.as_deref() == Some("Red rectangle")).unwrap();
+        let b = red.path_data().unwrap().to_bezpath().bounding_box();
+        assert!((b.x0 - 9.962 * mm).abs() < 0.001, "{file}: {b:?}");
+        assert!((b.y0 - 20.038 * mm).abs() < 0.001, "{file}: {b:?}");
+        assert!((b.width() - 40.0 * mm).abs() < 0.001);
+        assert!((red.appearance.stroke_width() - mm).abs() < 0.001);
+        assert_eq!(red.appearance.fill_paint(), vectorcraft_color::Paint::solid(vectorcraft_color::Color::rgb8(255, 0, 0)));
+    }
+    if file.starts_with("gradient") {
+        assert_corel_gradients(objects, mm);
+    }
+    if file.starts_with("group-transform") {
+        assert_eq!(objects[0].name.as_deref(), Some("Red group child"));
+        let b = objects[0].path_data().unwrap().to_bezpath().bounding_box();
+        assert!((b.x0 - 22.3526 * mm).abs() < 0.001);
+        assert!((b.y0 - 42.1132 * mm).abs() < 0.001);
+        assert!((b.x1 - 63.6603 * mm).abs() < 0.001);
+        assert!((b.y1 - 73.6603 * mm).abs() < 0.001);
+    }
+    if file.starts_with("color-models") {
+        assert_eq!(objects[0].appearance.fill_paint(), Paint::solid(vectorcraft_color::Color::cmyk(1.0, 0.0, 0.0, 0.0)));
+        assert_eq!(objects[1].appearance.fill_paint(), Paint::solid(vectorcraft_color::Color::gray(1.0 - 128.0 / 255.0)));
+    }
+}
+
+/// Retain the independent linear and elliptical radial fountain placement assertions.
+fn assert_corel_gradients(objects: &[&Node], mm: f64) {
+    let Paint::Gradient(linear) = objects[0].appearance.fill_paint() else { panic!("missing linear gradient") };
+    let Paint::Gradient(radial) = objects[1].appearance.fill_paint() else { panic!("missing radial gradient") };
+    assert_eq!(linear.gradient.kind, vectorcraft_color::GradientKind::Linear);
+    let l = linear.geom.unwrap();
+    assert!((l.start.x - 10.0 * mm).abs() < 0.001);
+    assert!((l.end.x - 90.0 * mm).abs() < 0.001);
+    let r = radial.geom.unwrap();
+    assert!((r.start.x - 50.0 * mm).abs() < 0.001);
+    assert!((r.start.y - 75.0 * mm).abs() < 0.001);
+    assert!((r.length() - 40.0 * mm).abs() < 0.001);
+    assert!((r.aspect - 0.375).abs() < 1e-8);
+    assert_eq!(radial.gradient.stops[0].color, vectorcraft_color::Color::WHITE);
+}
+
 #[test]
 /// Check optional local CorelDRAW originals against their known geometry and paint values.
 fn real_corel_files_when_supplied_locally() {
@@ -226,42 +271,7 @@ fn real_corel_files_when_supplied_locally() {
             1
         };
         assert_eq!(objects.len(), count, "{file}: {:?}", imported.warnings);
-        let mm = 72.0 / 25.4;
-        if file.starts_with("rectangle") || file.starts_with("geometry") {
-            let red = objects.iter().find(|n| n.name.as_deref() == Some("Red rectangle")).unwrap();
-            let b = red.path_data().unwrap().to_bezpath().bounding_box();
-            assert!((b.x0 - 9.962 * mm).abs() < 0.001, "{file}: {b:?}");
-            assert!((b.y0 - 20.038 * mm).abs() < 0.001, "{file}: {b:?}");
-            assert!((b.width() - 40.0 * mm).abs() < 0.001);
-            assert!((red.appearance.stroke_width() - mm).abs() < 0.001);
-            assert_eq!(red.appearance.fill_paint(), vectorcraft_color::Paint::solid(vectorcraft_color::Color::rgb8(255, 0, 0)));
-        }
-        if file.starts_with("gradient") {
-            let Paint::Gradient(linear) = objects[0].appearance.fill_paint() else { panic!("missing linear gradient") };
-            let Paint::Gradient(radial) = objects[1].appearance.fill_paint() else { panic!("missing radial gradient") };
-            assert_eq!(linear.gradient.kind, vectorcraft_color::GradientKind::Linear);
-            let l = linear.geom.unwrap();
-            assert!((l.start.x - 10.0 * mm).abs() < 0.001);
-            assert!((l.end.x - 90.0 * mm).abs() < 0.001);
-            let r = radial.geom.unwrap();
-            assert!((r.start.x - 50.0 * mm).abs() < 0.001);
-            assert!((r.start.y - 75.0 * mm).abs() < 0.001);
-            assert!((r.length() - 40.0 * mm).abs() < 0.001);
-            assert!((r.aspect - 0.375).abs() < 1e-8);
-            assert_eq!(radial.gradient.stops[0].color, vectorcraft_color::Color::WHITE);
-        }
-        if file.starts_with("group-transform") {
-            assert_eq!(objects[0].name.as_deref(), Some("Red group child"));
-            let b = objects[0].path_data().unwrap().to_bezpath().bounding_box();
-            assert!((b.x0 - 22.3526 * mm).abs() < 0.001);
-            assert!((b.y0 - 42.1132 * mm).abs() < 0.001);
-            assert!((b.x1 - 63.6603 * mm).abs() < 0.001);
-            assert!((b.y1 - 73.6603 * mm).abs() < 0.001);
-        }
-        if file.starts_with("color-models") {
-            assert_eq!(objects[0].appearance.fill_paint(), Paint::solid(vectorcraft_color::Color::cmyk(1.0, 0.0, 0.0, 0.0)));
-            assert_eq!(objects[1].appearance.fill_paint(), Paint::solid(vectorcraft_color::Color::gray(1.0 - 128.0 / 255.0)));
-        }
+        assert_corel_geometry_and_paint(file, &objects);
         if std::env::var_os("CDR_DUMP").is_some() {
             for o in objects {
                 eprintln!(
