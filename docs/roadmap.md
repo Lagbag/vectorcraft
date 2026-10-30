@@ -39,13 +39,25 @@ agent wall-clock hours, one agent. There is no `cargo xtask scorecard` or `cargo
 (the clean-room rule rules out a menu dump of Illustrator as an oracle; a checklist built from Illustrator's
 public menu documentation would be allowed).
 
-> **M4/CDR status:** 2026-10-30 · CDR.1–CDR.11 provide partial native import with editable PowerClip,
+> **M4/CDR status:** 2026-10-30 · CDR.1–CDR.12 provide partial native import with editable PowerClip,
 > modern corners, polygon/star seeds, B-spline cubics and fill rules. Focused checks and 32 oracle pages passed.
 > Scores and hour estimates are unchanged; the focused M4 follow-up below records the scope.
 
 CDR.9 also recovers drawing-only zero-page files from their editable artwork bounds
 and accepts exact PowerClip aliases with bounded expanded names. A supplied 180-curve
 file is checked against its independent Corel SVG; no private fixture is distributed.
+
+### CDR revision history
+
+| Date | Change | Summary |
+|---|---|---|
+| 2026-10-30 | minor | CDR.12: choose the initial viewport from individual drawn-object bounds when art lies on opposite sides of an empty page; retain saved-camera and conservative clip/effect bounds. Keep CDR evidence and revisions separate from shared assessment updates, and correct revision-entry spacing. Scores and hour estimates are unchanged. |
+| 2026-10-30 | minor | CDR.11: integrate the native reader with the current format registry and split viewport modules, preserving PCX support, saved-camera validation and original CDR tests. Format counts include PCX and partial CDR import; scores and hour estimates are unchanged. |
+| 2026-10-22 | minor | M4/CDR.10: stream native curve coordinates and distinguish cumulative coordinate-work and editable-anchor quotas for control-heavy files; retain bounds on aliases and procedural expansion. Scores and hours unchanged. |
+| 2026-10-22 | minor | M4/CDR.9: exact PowerClip aliases share definitions under bounded expansion, and drawing-only zero-page CDRs recover an artboard from editable artwork bounds. Independent private-file SVG comparison and native anchor-edit/save/reopen checks passed; full CI passed all 10 stages and 8521 tests. Import remains partial; scores and hours unchanged. |
+| 2026-10-22 | minor | M4/CDR.8: editable nested PowerClip, modern corner treatments and scaling, polygon/star seeds, B-spline cubics and alternate/winding fills. CDR scope moved to a focused M4 follow-up row; focused checks and 32 original oracle pages passed. Import remains partial; scores and hours unchanged. |
+| 2026-10-19 | minor | CDR.4: native embedded bitmap data, continuous alpha and editable crop outlines; first display fits artwork outside every artboard without changing document coordinates. Original bitmap/SVG oracles and viewport regressions; scores and estimates unchanged. |
+| 2026-10-19 | minor | M4/CDR.1: partial native CorelDRAW open and place; original CorelDRAW 15/16/27 fixtures and bounded malformed-input checks. Scores and estimates unchanged. |
 
 ## Alpha gate
 
@@ -147,7 +159,6 @@ separate. Scores and hours unchanged. [Behavior and command details](development
 
 | Date | Change | Summary |
 |---|---|---|
-| 2026-10-30 | minor | CDR.11: integrate the native reader with the current format registry and split viewport modules, preserving PCX support, saved-camera validation and original CDR tests. Format counts include PCX and partial CDR import; scores and hour estimates are unchanged. |
 | 2026-10-29 | minor | M6: Pathfinder: live compound shapes (#4522): the panel menu's Make, Release and Expand Compound Shape, Alt-clicking a Shape Mode, a selected member's Shape Mode and the Expand button act; scores unchanged |
 | 2026-10-26 | minor | M4/G9: EPS Save and Save As: an opened EPS saves back to its own path as EPS, keeping the chosen artboard's page frame and transparent margins and the complete editable VectorCraft document; Save's TIFF preview is capped at 1024 px (Export keeps 2048); partly read, preview-only or damaged-editing-data sources still need confirmation before they are overwritten; it does not write Illustrator's own editing data (#868), and G9's real-file import fidelity is unchanged; scores and estimates unchanged |
 | 2026-10-25 | minor | M10/G1: a selected Grid Repeat shows handles: the one below the grid adds or removes rows, the one right of it columns, the one past its bottom-right corner both, and the sliders between the first two columns and rows set the horizontal and vertical spacing; each drag is one undo step and Escape cancels it (#2691); estimates unchanged |
@@ -186,11 +197,6 @@ separate. Scores and hours unchanged. [Behavior and command details](development
 | 2026-10-20 | minor | Live trace result bounds and selection highlights exclude the retained bitmap except in source-image views; scores and hours unchanged. |
 | 2026-10-20 | minor | M3.57: CSS swatch libraries preserve fractional stop positions in linear and radial gradients; synthetic color-crate regression. Scores and hours unchanged. |
 | 2026-10-19 | minor | Cache status-readout sample widths per UI, language, document unit and pixels per point; regressions check reuse across live frames and refresh after display-setting changes. Scores and estimates unchanged. |
-| 2026-10-19 | minor | M4/CDR.1: partial native CorelDRAW open and place; original CorelDRAW 15/16/27 fixtures and bounded malformed-input checks. Scores and estimates unchanged. |
-| 2026-10-19 | minor | CDR.4: native embedded bitmap data, continuous alpha and editable crop outlines; first display fits artwork outside every artboard without changing document coordinates. Original bitmap/SVG oracles and viewport regressions; scores and estimates unchanged. |
-| 2026-10-22 | minor | M4/CDR.8: editable nested PowerClip, modern corner treatments and scaling, polygon/star seeds, B-spline cubics and alternate/winding fills. CDR scope moved to a focused M4 follow-up row; focused checks and 32 original oracle pages passed. Import remains partial; scores and hours unchanged. |
-| 2026-10-22 | minor | M4/CDR.9: exact PowerClip aliases share definitions under bounded expansion, and drawing-only zero-page CDRs recover an artboard from editable artwork bounds. Independent private-file SVG comparison and native anchor-edit/save/reopen checks passed; full CI passed all 10 stages and 8521 tests. Import remains partial; scores and hours unchanged. |
-| 2026-10-22 | minor | M4/CDR.10: stream native curve coordinates and distinguish cumulative coordinate-work and editable-anchor quotas for control-heavy files; retain bounds on aliases and procedural expansion. Scores and hours unchanged. |
 | 2026-10-19 | minor | Status messages and readouts use stable responsive allocations sized for localized labels and ordinary coordinates. Contributor original-file acceptance confirmed; scores and estimates unchanged. |
 | 2026-10-18 | minor | M4/DXF #1299: circular cubic paths export as native CIRCLE/ARC where stroke semantics permit; R12 weighted strokes retain POLYLINE width and closed partial arcs with an implicit closing chord are not promoted to CIRCLE. Scores and hours unchanged. |
 | 2026-10-19 | minor | Cached canvas dimensions match the renderer limit before cache-key creation, view construction and worker submission. Regression coverage; scores and estimates unchanged. |

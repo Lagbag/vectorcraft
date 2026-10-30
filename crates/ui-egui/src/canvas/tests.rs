@@ -4381,6 +4381,58 @@ fn off_artboard_session() -> Session {
     session
 }
 
+/// Keep artwork on opposite sides of the page, with the same centre as the empty page.
+fn opposite_off_artboard_session(group_depth: usize) -> Session {
+    let mut session = Session::new();
+    session.execute("file.new", &json!({"width": 200, "height": 100})).unwrap();
+    for x in [-150, 310] {
+        session.execute("shape.rectangle", &json!({"x": x, "y": 35, "width": 40, "height": 30})).unwrap();
+    }
+    session.execute("select.all", &json!({})).unwrap();
+    for _ in 0..group_depth {
+        session.execute("object.group", &json!({})).unwrap();
+    }
+    session.execute("select.none", &json!({})).unwrap();
+    session
+}
+
+/// The union of separate off-page bounds crosses the page, but its empty gap cannot hide the art.
+#[test]
+fn first_frame_fits_opposite_off_page_art_inside_plain_or_nested_groups() {
+    for depth in 0..=2 {
+        let mut app = VectorcraftApp::new(opposite_off_artboard_session(depth), Default::default());
+        let before = app.session.doc().unwrap().doc.clone();
+        let undo = app.session.doc().unwrap().history.undo.len();
+        let target = vectorcraft_render::encode::art_bounds(&before).unwrap();
+        assert_eq!(target.center(), before.artboards[0].rect.center());
+        assert_eq!(app.view().unwrap().initial_target, Some(target));
+        frame(&mut app, &egui::Context::default(), vec![]);
+        let view = app.view().unwrap();
+        assert!(view.fitted && view.initial_target.is_none());
+        assert_eq!(view.center, target.center());
+        let canvas = app.canvas_rect.unwrap();
+        assert!(Xf::new(canvas, view).quad(target).iter().all(|p| canvas.contains(*p)));
+        let art_zoom = view.zoom;
+        app.run("view.fitArtboard", json!({})).unwrap();
+        assert!(app.view().unwrap().zoom > art_zoom, "the old page fit cannot show both off-page objects");
+        assert!(std::sync::Arc::ptr_eq(&before, &app.session.doc().unwrap().doc));
+        assert_eq!(app.session.doc().unwrap().history.undo.len(), undo);
+    }
+}
+
+/// A stored camera still wins when separate off-page objects would otherwise need their own fit.
+#[test]
+fn saved_view_overrides_opposite_off_page_art() {
+    let mut session = opposite_off_artboard_session(2);
+    let saved = vectorcraft_doc::SavedView { name: String::new(), center: Point::new(12.0, 34.0), zoom: 2.0, rotation: 15.0 };
+    session.doc_mut().unwrap().view = Some(saved.clone());
+    let mut app = VectorcraftApp::new(session, Default::default());
+    assert!(app.view().unwrap().fitted && app.view().unwrap().initial_target.is_none());
+    frame(&mut app, &egui::Context::default(), vec![]);
+    let view = app.view().unwrap();
+    assert_eq!((view.center, view.zoom, view.rotation), (saved.center, saved.zoom, saved.rotation));
+}
+
 /// An imported drawing can keep its art metres away from its real page. Only the camera
 /// changes, and the target waits for the first canvas rather than using an absent size.
 #[test]

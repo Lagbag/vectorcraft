@@ -38,10 +38,8 @@ impl View {
     /// The view a document opens at: the one it was saved with, else fitted on first display.
     pub fn of(st: &vectorcraft_engine::DocState) -> Self {
         st.view.as_ref().and_then(Self::saved).unwrap_or_else(|| {
-            let initial_target = vectorcraft_render::encode::art_bounds(&st.doc).filter(|b| {
-                [b.x0, b.y0, b.x1, b.y1].iter().all(|v| v.is_finite())
-                    && st.doc.artboards.iter().all(|a| b.x1 < a.rect.x0 || b.x0 > a.rect.x1 || b.y1 < a.rect.y0 || b.y0 > a.rect.y1)
-            });
+            let initial_target =
+                vectorcraft_render::encode::off_artboard_bounds(&st.doc).filter(|b| [b.x0, b.y0, b.x1, b.y1].iter().all(|v| v.is_finite()));
             Self { initial_target, ..Self::default() }
         })
     }
